@@ -3,16 +3,16 @@
   "name": "mujde-auto",
   "builds": [
     {
-      "src": "galeri-websitesi/**/*",
+      "src": "**/*",
       "use": "@vercel/static"
     }
   ],
   "rewrites": [
-    { "source": "/css/:path*", "destination": "/galeri-websitesi/css/:path*" },
-    { "source": "/js/:path*", "destination": "/galeri-websitesi/js/:path*" },
-    { "source": "/img/:path*", "destination": "/galeri-websitesi/img/:path*" },
-    { "source": "/manifest.json", "destination": "/galeri-websitesi/manifest.json" },
-    { "source": "/:path*", "destination": "/galeri-websitesi/:path*" }
+    { "source": "/css/:path*", "destination": "/css/:path*" },
+    { "source": "/js/:path*", "destination": "/js/:path*" },
+    { "source": "/img/:path*", "destination": "/img/:path*" },
+    { "source": "/manifest.json", "destination": "/manifest.json" },
+    { "source": "/:path*", "destination": "/index.html" }
   ],
   "headers": [
     {
