@@ -3,13 +3,14 @@
   "name": "mujde-auto",
   "builds": [
     {
-      "src": "**/*",
+      "src": "galeri-websitesi/**/*",
       "use": "@vercel/static"
     }
   ],
   "routes": [
     {
-      "src": "/sw.js",
+      "src": "/(.*)",
+      "dest": "galeri-websitesi/$1",
       "headers": {
         "cache-control": "s-maxage=0"
       }
@@ -52,7 +53,7 @@
       ]
     },
     {
-      "source": "/görseller/(.*)",
+      "source": "/img/(.*)",
       "headers": [
         {
           "key": "Cache-Control",
@@ -79,4 +80,5 @@
       ]
     }
   ]
+
 } 
