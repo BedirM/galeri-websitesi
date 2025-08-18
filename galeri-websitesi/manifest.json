@@ -1,0 +1,62 @@
+{
+    "name": "MÜJDE AUTO - Oto Galeri",
+    "short_name": "MÜJDE AUTO",
+    "description": "Gaziantep'in güvenilir oto galerisi. 15 yıllık tecrübe ile kaliteli araç alım-satım hizmetleri.",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#212529",
+    "theme_color": "#ff6b35",
+    "orientation": "portrait-primary",
+    "scope": "/",
+    "lang": "tr",
+    "dir": "ltr",
+    "categories": ["business", "automotive"],
+    "icons": [
+        {
+            "src": "favicon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "apple-touch-icon.png",
+            "sizes": "180x180",
+            "type": "image/png"
+        }
+    ],
+    "screenshots": [
+        {
+            "src": "görseller/bmw320i.jpg",
+            "sizes": "1280x720",
+            "type": "image/jpeg",
+            "form_factor": "wide",
+            "label": "MÜJDE AUTO Ana Sayfa"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Araçları İncele",
+            "short_name": "Araçlar",
+            "description": "Mevcut araç filosunu görüntüle",
+            "url": "/#vehicles",
+            "icons": [
+                {
+                    "src": "favicon.svg",
+                    "sizes": "96x96"
+                }
+            ]
+        },
+        {
+            "name": "İletişim",
+            "short_name": "İletişim",
+            "description": "Bizimle iletişime geçin",
+            "url": "/contact.html",
+            "icons": [
+                {
+                    "src": "favicon.svg",
+                    "sizes": "96x96"
+                }
+            ]
+        }
+    ]
+} 
