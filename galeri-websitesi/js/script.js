@@ -1665,12 +1665,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const detailsEl = this.querySelector('p');
             const priceEl = this.querySelector('.price');
 
-            const title = titleEl ? titleEl.textContent : "Araç";
-            const details = detailsEl ? detailsEl.textContent : "Detay yok";
-            const price = priceEl ? priceEl.textContent : "Fiyat belirtilmedi";
-
-            // Yeni sayfa açma yok, sadece alert ile göster
-            alert(`${title}\n${details}\n${price}`);
         });
 
         // Hover tooltip ekle
