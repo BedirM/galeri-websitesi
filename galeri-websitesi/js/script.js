@@ -939,6 +939,7 @@ submitForm() {
         submitBtn.innerHTML = originalText;
     });
 }
+}
 
 
 // Allow only name-related characters (letters and spaces)
