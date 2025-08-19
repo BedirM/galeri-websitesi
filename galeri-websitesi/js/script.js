@@ -1659,13 +1659,26 @@ document.addEventListener('DOMContentLoaded', function() {
     // Vehicle card click events
     const vehicleCards = document.querySelectorAll('.vehicle-card');
     vehicleCards.forEach(card => {
-        card.addEventListener('click', function() {
+        card.addEventListener('click', function () {
             const img = this.querySelector('img');
-            const title = this.querySelector('h5').textContent;
-            const details = this.querySelector('p').textContent;
-            const price = this.querySelector('.price').textContent;
-            showVehicleModal(img.src, title, details, price);
+            const titleEl = this.querySelector('h5');
+            const detailsEl = this.querySelector('p');
+            const priceEl = this.querySelector('.price');
+
+            const title = titleEl ? titleEl.textContent : "Araç";
+            const details = detailsEl ? detailsEl.textContent : "Detay yok";
+            const price = priceEl ? priceEl.textContent : "Fiyat belirtilmedi";
+
+            // Yeni sayfa açma yok, sadece alert ile göster
+            alert(`${title}\n${details}\n${price}`);
         });
+
+        // Hover tooltip ekle
+        const img = card.querySelector('img');
+        const titleEl = card.querySelector('h5');
+        if (img && titleEl) {
+            img.title = titleEl.textContent;
+        }
     });
 
     // Add scroll reveal animation (optimized)
