@@ -1514,10 +1514,10 @@ if (window.location.protocol !== 'file:') {
     document.head.appendChild(manifestLink);
 }
 
-window.addEventListener('beforeinstallprompt', (e) => {
+//window.addEventListener('beforeinstallprompt', (e) => {
     // Show install button or notification
-    showInstallPrompt();
-});
+    //showInstallPrompt();
+//});
 
 function showInstallPrompt() {
     if (window.userFeedback && typeof window.userFeedback.showNotification === 'function') {
