@@ -890,66 +890,55 @@ class FormValidator {
         });
     }
 
-    submitForm() {
-        const submitBtn = this.form.querySelector('button[type="submit"]');
-        const originalText = submitBtn.innerHTML;
-        
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span class="loading-spinner me-2"></span>Gönderiliyor...';
-        
-        // Web3Forms'e gönderim
-        const formData = new FormData(this.form);
-        
-        // Web3Forms endpoint'i
-        const web3formsUrl = 'https://api.web3forms.com/submit';
-        
-        fetch(web3formsUrl, {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => {
-            if (response.ok) {
-                return response.json();
-            } else {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-        })
-        .then(data => {
-            console.log('Web3Forms response:', data);
-            
-            if (data.success) {
-                // Başarı mesajı göster
-                if (typeof showNotification === 'function') {
-                    showNotification('Mesajınız başarıyla gönderildi!', 'success');
-                } else {
-                    alert('Mesajınız başarıyla gönderildi!');
-                }
-                
-                this.form.reset();
-                
-                // Clear all validation states
-                Object.keys(this.fields).forEach(fieldName => {
-                    this.clearFieldError(fieldName);
-                });
-            } else {
-                throw new Error('Form submission failed');
-            }
-        })
-        .catch(error => {
-            console.error('Form submission error:', error);
-            // Hata mesajı göster
+submitForm() {
+    const submitBtn = this.form.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="loading-spinner me-2"></span>Gönderiliyor...';
+    
+    const formData = new FormData(this.form);
+
+    // Formspree endpoint
+    const formspreeUrl = 'https://formspree.io/f/mwpqjpny';
+    
+    fetch(formspreeUrl, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.ok) {
             if (typeof showNotification === 'function') {
-                showNotification('Mesaj gönderilirken bir hata oluştu. Lütfen tekrar deneyin.', 'error');
+                showNotification('Mesajınız başarıyla gönderildi!', 'success');
             } else {
-                alert('Mesaj gönderilirken bir hata oluştu. Lütfen tekrar deneyin.');
+                alert('Mesajınız başarıyla gönderildi!');
             }
-        })
-        .finally(() => {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = originalText;
-        });
-    }
+            this.form.reset();
+            Object.keys(this.fields).forEach(fieldName => {
+                this.clearFieldError(fieldName);
+            });
+        } else {
+            throw new Error('Form submission failed');
+        }
+    })
+    .catch(error => {
+        console.error('Form submission error:', error);
+        if (typeof showNotification === 'function') {
+            showNotification('Mesaj gönderilirken bir hata oluştu. Lütfen tekrar deneyin.', 'error');
+        } else {
+            alert('Mesaj gönderilirken bir hata oluştu. Lütfen tekrar deneyin.');
+        }
+    })
+    .finally(() => {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+    });
 }
+
 
 // Allow only name-related characters (letters and spaces)
 function allowNameChars(event) {
