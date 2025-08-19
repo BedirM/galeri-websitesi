@@ -117,7 +117,7 @@ class PerformanceMonitor {
     }
 
     observePageLoad() {
-        window.addEventListener('load', () => { // Changed to 'load' as DOMContentLoaded might be too early for full load metrics
+        window.addEventListener('load', () => {
             const loadTime = performance.timing.loadEventEnd - performance.timing.navigationStart;
             this.metrics.pageLoadTime = loadTime;
             this.logMetric('Page Load Time', loadTime);
@@ -300,7 +300,6 @@ class SecurityManager {
     handleSuspiciousActivity(type) {
         console.warn(`Suspicious activity detected: ${type}`);
         // In production, you might want to send this to a monitoring service
-        // or implement additional security measures
     }
 
     validateCSRFToken(token) {
@@ -368,7 +367,7 @@ function showNotification(message, type) {
     // Ekran boyutu değişikliklerini dinle
     const updatePosition = () => {
         const currentIsMobile = window.innerWidth <= 768;
-        const currentTopPosition = currentIsMobile ? navbarHeight + 20 : 20; // Desktop'ta 20px, mobilde navbar altında
+        const currentTopPosition = currentIsMobile ? navbarHeight + 20 : 20;
         
         notification.style.top = `${currentTopPosition}px`;
         notification.style.right = currentIsMobile ? '15px' : '20px';
@@ -880,7 +879,13 @@ class FormValidator {
             if (this.validateForm()) {
                 this.submitForm();
             } else {
-                userFeedback.showNotification('Lütfen tüm zorunlu alanları doldurun.', 'error');
+                if (window.userFeedback && typeof window.userFeedback.showNotification === 'function') {
+                    window.userFeedback.showNotification('Lütfen tüm zorunlu alanları doldurun.', 'error');
+                } else if (typeof showNotification === 'function') {
+                    showNotification('Lütfen tüm zorunlu alanları doldurun.', 'error');
+                } else {
+                    alert('Lütfen tüm zorunlu alanları doldurun.');
+                }
             }
         });
     }
@@ -1218,12 +1223,340 @@ function checkURLSearchParameter() {
     }
 }
 
+// Enhanced Analytics and User Behavior Tracking
+class AnalyticsManager {
+    constructor() {
+        this.events = [];
+        this.sessionStart = Date.now();
+        this.init();
+    }
+
+    init() {
+        this.trackPageView();
+        this.trackUserEngagement();
+        this.trackFormInteractions();
+        this.trackVehicleInteractions();
+        this.trackPerformanceMetrics();
+    }
+
+    trackPageView() {
+        const pageData = {
+            event: 'page_view',
+            page: window.location.pathname,
+            title: document.title,
+            timestamp: Date.now(),
+            userAgent: navigator.userAgent,
+            screenResolution: `${screen.width}x${screen.height}`,
+            language: navigator.language
+        };
+        
+        this.sendEvent(pageData);
+    }
+
+    trackUserEngagement() {
+        // Track scroll depth
+        let maxScroll = 0;
+        const mainContent = document.querySelector('.main-content');
+        const scrollElement = mainContent || window;
+        
+        scrollElement.addEventListener('scroll', debounce(() => {
+            const scrollTop = mainContent ? mainContent.scrollTop : window.scrollY;
+            const scrollHeight = mainContent ? mainContent.scrollHeight : document.documentElement.scrollHeight;
+            const scrollPercent = Math.round((scrollTop / (scrollHeight - window.innerHeight)) * 100);
+            
+            if (scrollPercent > maxScroll) {
+                maxScroll = scrollPercent;
+                if (maxScroll % 25 === 0) { // Track every 25%
+                    this.sendEvent({
+                        event: 'scroll_depth',
+                        depth: maxScroll,
+                        page: window.location.pathname
+                    });
+                }
+            }
+        }, 1000));
+
+        // Track time on page
+        setInterval(() => {
+            const timeOnPage = Math.round((Date.now() - this.sessionStart) / 1000);
+            if (timeOnPage % 30 === 0) { // Track every 30 seconds
+                this.sendEvent({
+                    event: 'time_on_page',
+                    seconds: timeOnPage,
+                    page: window.location.pathname
+                });
+            }
+        }, 30000);
+    }
+
+    trackFormInteractions() {
+        const forms = document.querySelectorAll('form');
+        forms.forEach(form => {
+            // Track form start
+            const inputs = form.querySelectorAll('input, textarea, select');
+            inputs.forEach(input => {
+                input.addEventListener('focus', () => {
+                    this.sendEvent({
+                        event: 'form_field_focus',
+                        field: input.name,
+                        form: form.id || 'contact_form'
+                    });
+                });
+            });
+
+            // Track form submission
+            form.addEventListener('submit', (e) => {
+                this.sendEvent({
+                    event: 'form_submit',
+                    form: form.id || 'contact_form',
+                    success: true
+                });
+            });
+        });
+    }
+
+    trackVehicleInteractions() {
+        const vehicleCards = document.querySelectorAll('.vehicle-card');
+        vehicleCards.forEach(card => {
+            card.addEventListener('click', () => {
+                const title = card.querySelector('h5')?.textContent || 'Unknown Vehicle';
+                this.sendEvent({
+                    event: 'vehicle_click',
+                    vehicle: title,
+                    page: window.location.pathname
+                });
+            });
+        });
+
+        // Track search
+        const searchInput = document.querySelector('#vehicleSearch');
+        if (searchInput) {
+            searchInput.addEventListener('input', debounce((e) => {
+                if (e.target.value.length > 2) {
+                    this.sendEvent({
+                        event: 'vehicle_search',
+                        query: e.target.value,
+                        page: window.location.pathname
+                    });
+                }
+            }, 1000));
+        }
+    }
+
+    trackPerformanceMetrics() {
+        // Track Core Web Vitals
+        if ('PerformanceObserver' in window) {
+            // Largest Contentful Paint
+            const lcpObserver = new PerformanceObserver((list) => {
+                const entries = list.getEntries();
+                const lastEntry = entries[entries.length - 1];
+                this.sendEvent({
+                    event: 'performance_metric',
+                    metric: 'LCP',
+                    value: Math.round(lastEntry.startTime),
+                    page: window.location.pathname
+                });
+            });
+            lcpObserver.observe({ entryTypes: ['largest-contentful-paint'] });
+
+            // First Input Delay
+            const fidObserver = new PerformanceObserver((list) => {
+                const entries = list.getEntries();
+                entries.forEach(entry => {
+                    this.sendEvent({
+                        event: 'performance_metric',
+                        metric: 'FID',
+                        value: Math.round(entry.processingStart - entry.startTime),
+                        page: window.location.pathname
+                    });
+                });
+            });
+            fidObserver.observe({ entryTypes: ['first-input'] });
+
+            // Cumulative Layout Shift
+            let clsValue = 0;
+            const clsObserver = new PerformanceObserver((list) => {
+                const entries = list.getEntries();
+                entries.forEach(entry => {
+                    if (!entry.hadRecentInput) {
+                        clsValue += entry.value;
+                        if (clsValue > 0.1) {
+                            this.sendEvent({
+                                event: 'performance_metric',
+                                metric: 'CLS',
+                                value: Math.round(clsValue * 1000) / 1000,
+                                page: window.location.pathname
+                            });
+                        }
+                    }
+                });
+            });
+            clsObserver.observe({ entryTypes: ['layout-shift'] });
+        }
+    }
+
+    sendEvent(data) {
+        // Add session data
+        data.sessionId = this.getSessionId();
+        data.timestamp = Date.now();
+        
+        // Store locally for offline sync
+        this.events.push(data);
+
+        // Sadece localStorage'da sakla (statik barındırma için)
+        this.storeLocally(data);
+        
+        // Keep only last 100 events in memory
+        if (this.events.length > 100) {
+            this.events = this.events.slice(-100);
+        }
+    }
+
+    // Statik sitede ağ isteği atmayalım (405 hatasının kaynağı burasıydı)
+    sendToAnalytics(_data) {
+        this.storeLocally(_data);
+    }
+
+    storeLocally(data) {
+        try {
+            const existingData = JSON.parse(localStorage.getItem('analytics_data') || '[]');
+            existingData.push({
+                ...data,
+                timestamp: new Date().toISOString()
+            });
+            if (existingData.length > 100) {
+                existingData.splice(0, existingData.length - 100);
+            }
+            localStorage.setItem('analytics_data', JSON.stringify(existingData));
+        } catch (error) {
+            console.log('Could not store analytics data locally');
+        }
+    }
+
+    getSessionId() {
+        let sessionId = sessionStorage.getItem('analytics_session_id');
+        if (!sessionId) {
+            sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            sessionStorage.setItem('analytics_session_id', sessionId);
+        }
+        return sessionId;
+    }
+
+    // Sync offline events when back online
+    syncOfflineEvents() {
+        if (this.events.length > 0) {
+            this.events.forEach(event => {
+                this.sendToAnalytics(event);
+            });
+            this.events = [];
+        }
+    }
+}
+
+// Service Worker Registration
+async function registerServiceWorker() {
+    // Only register Service Worker if not running on file:// protocol
+    if (window.location.protocol === 'file:') {
+        console.log('Service Worker: Skipping registration in local development (file:// protocol)');
+        return;
+    }
+    
+    if ('serviceWorker' in navigator) {
+        try {
+            const registration = await navigator.serviceWorker.register('/sw.js');
+            console.log('Service Worker registered successfully:', registration);
+            
+            // Check for updates
+            registration.addEventListener('updatefound', () => {
+                const newWorker = registration.installing;
+                newWorker.addEventListener('statechange', () => {
+                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                        // New version available
+                        showUpdateNotification();
+                    }
+                });
+            });
+            
+            // Handle service worker updates
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                console.log('New service worker activated');
+                window.location.reload();
+            });
+            
+        } catch (error) {
+            console.error('Service Worker registration failed:', error);
+        }
+    }
+}
+
+// Show update notification
+function showUpdateNotification() {
+    if (window.userFeedback && typeof window.userFeedback.showNotification === 'function') {
+        window.userFeedback.showNotification(
+            'Yeni bir güncelleme mevcut. Sayfayı yenileyin.',
+            'info',
+            10000
+        );
+    } else if (typeof showNotification === 'function') {
+        showNotification('Yeni bir güncelleme mevcut. Sayfayı yenileyin.', 'info');
+    }
+}
+
+// PWA Install Prompt
+let deferredPrompt;
+
+// Only load PWA manifest if not running on file:// protocol
+if (window.location.protocol !== 'file:') {
+    // Add manifest link dynamically
+    const manifestLink = document.createElement('link');
+    manifestLink.rel = 'manifest';
+    manifestLink.href = 'manifest.json';
+    document.head.appendChild(manifestLink);
+}
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    
+    // Show install button or notification
+    showInstallPrompt();
+});
+
+function showInstallPrompt() {
+    if (window.userFeedback && typeof window.userFeedback.showNotification === 'function') {
+        window.userFeedback.showNotification(
+            'MÜJDE AUTO\'yu ana ekranınıza ekleyin!',
+            'info',
+            8000
+        );
+    } else if (typeof showNotification === 'function') {
+        showNotification('MÜJDE AUTO\'yu ana ekranınıza ekleyin!', 'info');
+    }
+}
+
+// Handle app install
+window.addEventListener('appinstalled', () => {
+    console.log('PWA installed successfully');
+    deferredPrompt = null;
+    
+    if (window.userFeedback && typeof window.userFeedback.showNotification === 'function') {
+        window.userFeedback.showNotification(
+            'MÜJDE AUTO başarıyla yüklendi!',
+            'success'
+        );
+    } else if (typeof showNotification === 'function') {
+        showNotification('MÜJDE AUTO başarıyla yüklendi!', 'success');
+    }
+});
+
 // Main DOMContentLoaded logic
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize managers
     const performanceMonitor = new PerformanceMonitor();
     const securityManager = new SecurityManager();
-    const userFeedback = new UserFeedbackManager();
+
+    // Global hale getir (diğer fonksiyonlar erişebilsin)
+    window.userFeedback = new UserFeedbackManager();
     const analyticsManager = new AnalyticsManager();
     
     // Initialize form validation
@@ -1437,294 +1770,3 @@ document.addEventListener('DOMContentLoaded', function() {
     // Register Service Worker for PWA
     registerServiceWorker();
 });
-
-// Enhanced Analytics and User Behavior Tracking
-class AnalyticsManager {
-    constructor() {
-        this.events = [];
-        this.sessionStart = Date.now();
-        this.init();
-    }
-
-    init() {
-        this.trackPageView();
-        this.trackUserEngagement();
-        this.trackFormInteractions();
-        this.trackVehicleInteractions();
-        this.trackPerformanceMetrics();
-    }
-
-    trackPageView() {
-        const pageData = {
-            event: 'page_view',
-            page: window.location.pathname,
-            title: document.title,
-            timestamp: Date.now(),
-            userAgent: navigator.userAgent,
-            screenResolution: `${screen.width}x${screen.height}`,
-            language: navigator.language
-        };
-        this.sendEvent(pageData);
-    }
-
-    trackUserEngagement() {
-        // Track scroll depth
-        let maxScroll = 0;
-        const mainContent = document.querySelector('.main-content');
-        const scrollElement = mainContent || window;
-        
-        scrollElement.addEventListener('scroll', debounce(() => {
-            const scrollTop = mainContent ? mainContent.scrollTop : window.scrollY;
-            const scrollHeight = mainContent ? mainContent.scrollHeight : document.documentElement.scrollHeight;
-            const scrollPercent = Math.round((scrollTop / (scrollHeight - window.innerHeight)) * 100);
-            
-            if (scrollPercent > maxScroll) {
-                maxScroll = scrollPercent;
-                if (maxScroll % 25 === 0) {
-                    this.sendEvent({
-                        event: 'scroll_depth',
-                        depth: maxScroll,
-                        page: window.location.pathname
-                    });
-                }
-            }
-        }, 1000));
-
-        // Track time on page
-        setInterval(() => {
-            const timeOnPage = Math.round((Date.now() - this.sessionStart) / 1000);
-            if (timeOnPage % 30 === 0) {
-                this.sendEvent({
-                    event: 'time_on_page',
-                    seconds: timeOnPage,
-                    page: window.location.pathname
-                });
-            }
-        }, 30000);
-    }
-
-    trackFormInteractions() {
-        const forms = document.querySelectorAll('form');
-        forms.forEach(form => {
-            const inputs = form.querySelectorAll('input, textarea, select');
-            inputs.forEach(input => {
-                input.addEventListener('focus', () => {
-                    this.sendEvent({
-                        event: 'form_field_focus',
-                        field: input.name,
-                        form: form.id || 'contact_form'
-                    });
-                });
-            });
-
-            form.addEventListener('submit', () => {
-                this.sendEvent({
-                    event: 'form_submit',
-                    form: form.id || 'contact_form',
-                    success: true
-                });
-            });
-        });
-    }
-
-    trackVehicleInteractions() {
-        const vehicleCards = document.querySelectorAll('.vehicle-card');
-        vehicleCards.forEach(card => {
-            card.addEventListener('click', () => {
-                const title = card.querySelector('h5')?.textContent || 'Unknown Vehicle';
-                this.sendEvent({
-                    event: 'vehicle_click',
-                    vehicle: title,
-                    page: window.location.pathname
-                });
-            });
-        });
-
-        const searchInput = document.querySelector('#vehicleSearch');
-        if (searchInput) {
-            searchInput.addEventListener('input', debounce((e) => {
-                if (e.target.value.length > 2) {
-                    this.sendEvent({
-                        event: 'vehicle_search',
-                        query: e.target.value,
-                        page: window.location.pathname
-                    });
-                }
-            }, 1000));
-        }
-    }
-
-    trackPerformanceMetrics() {
-        if ('PerformanceObserver' in window) {
-            const lcpObserver = new PerformanceObserver((list) => {
-                const entries = list.getEntries();
-                const lastEntry = entries[entries.length - 1];
-                this.sendEvent({
-                    event: 'performance_metric',
-                    metric: 'LCP',
-                    value: Math.round(lastEntry.startTime),
-                    page: window.location.pathname
-                });
-            });
-            lcpObserver.observe({ entryTypes: ['largest-contentful-paint'] });
-
-            const fidObserver = new PerformanceObserver((list) => {
-                const entries = list.getEntries();
-                entries.forEach(entry => {
-                    this.sendEvent({
-                        event: 'performance_metric',
-                        metric: 'FID',
-                        value: Math.round(entry.processingStart - entry.startTime),
-                        page: window.location.pathname
-                    });
-                });
-            });
-            fidObserver.observe({ entryTypes: ['first-input'] });
-
-            let clsValue = 0;
-            const clsObserver = new PerformanceObserver((list) => {
-                const entries = list.getEntries();
-                entries.forEach(entry => {
-                    if (!entry.hadRecentInput) {
-                        clsValue += entry.value;
-                        if (clsValue > 0.1) {
-                            this.sendEvent({
-                                event: 'performance_metric',
-                                metric: 'CLS',
-                                value: Math.round(clsValue * 1000) / 1000,
-                                page: window.location.pathname
-                            });
-                        }
-                    }
-                });
-            });
-            clsObserver.observe({ entryTypes: ['layout-shift'] });
-        }
-    }
-
-    sendEvent(data) {
-        data.sessionId = this.getSessionId();
-        data.timestamp = Date.now();
-        this.events.push(data);
-
-        // sadece localStorage kullan, backend yok
-        this.storeLocally(data);
-
-        if (this.events.length > 100) {
-            this.events = this.events.slice(-100);
-        }
-    }
-
-    storeLocally(data) {
-        try {
-            const existingData = JSON.parse(localStorage.getItem('analytics_data') || '[]');
-            existingData.push({
-                ...data,
-                timestamp: new Date().toISOString()
-            });
-            if (existingData.length > 100) {
-                existingData.splice(0, existingData.length - 100);
-            }
-            localStorage.setItem('analytics_data', JSON.stringify(existingData));
-        } catch (error) {
-            console.log('Could not store analytics data locally');
-        }
-    }
-
-    getSessionId() {
-        let sessionId = sessionStorage.getItem('analytics_session_id');
-        if (!sessionId) {
-            sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-            sessionStorage.setItem('analytics_session_id', sessionId);
-        }
-        return sessionId;
-    }
-}
-
-// Service Worker Registration
-async function registerServiceWorker() {
-    if (window.location.protocol === 'file:') {
-        console.log('Service Worker: Skipping registration in local development (file:// protocol)');
-        return;
-    }
-    
-    if ('serviceWorker' in navigator) {
-        try {
-            const registration = await navigator.serviceWorker.register('/sw.js');
-            console.log('Service Worker registered successfully:', registration);
-            
-            registration.addEventListener('updatefound', () => {
-                const newWorker = registration.installing;
-                newWorker.addEventListener('statechange', () => {
-                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                        showUpdateNotification();
-                    }
-                });
-            });
-            
-            navigator.serviceWorker.addEventListener('controllerchange', () => {
-                console.log('New service worker activated');
-                window.location.reload();
-            });
-            
-        } catch (error) {
-            console.error('Service Worker registration failed:', error);
-        }
-    }
-}
-
-// Show update notification
-function showUpdateNotification() {
-    if (typeof userFeedback !== 'undefined') {
-        userFeedback.showNotification(
-            'Yeni bir güncelleme mevcut. Sayfayı yenileyin.',
-            'info',
-            10000
-        );
-    } else {
-        alert("Yeni bir güncelleme mevcut. Sayfayı yenileyin.");
-    }
-}
-
-// PWA Install Prompt
-let deferredPrompt;
-
-if (window.location.protocol !== 'file:') {
-    const manifestLink = document.createElement('link');
-    manifestLink.rel = 'manifest';
-    manifestLink.href = 'manifest.json';
-    document.head.appendChild(manifestLink);
-}
-
-window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    showInstallPrompt();
-});
-
-function showInstallPrompt() {
-    if (typeof userFeedback !== 'undefined') {
-        userFeedback.showNotification(
-            "MÜJDE AUTO'yu ana ekranınıza ekleyin!",
-            'info',
-            8000
-        );
-    } else {
-        console.log("PWA yükleme bildirimi gösterilebilir.");
-    }
-}
-
-window.addEventListener('appinstalled', () => {
-    console.log('PWA installed successfully');
-    deferredPrompt = null;
-    
-    if (typeof userFeedback !== 'undefined') {
-        userFeedback.showNotification(
-            'MÜJDE AUTO başarıyla yüklendi!',
-            'success'
-        );
-    } else {
-        alert("MÜJDE AUTO başarıyla yüklendi!");
-    }
-});
-
