@@ -19,8 +19,10 @@
 
 html, body {
     height: 100%;
-    overflow: hidden; /* Genel dikey kaydırmayı engelle */
+    width: 100%;
+    max-width: 100%;
     overflow-x: hidden; /* Yatay kaydırmayı engelle */
+    /* Dikey kaydırma açık kalacak */
 }
 
 body {
@@ -31,7 +33,7 @@ body {
 }
 
 .main-content {
-    height: calc(100vh - 70px); /* Ekran yüksekliğinden navbar yüksekliğini çıkar */
+    min-height: calc(100vh - 70px); /* Yüksekliği minimum ayarla */
     overflow-y: auto; /* İçeriğin kaydırılabilir olmasını sağla */
     -webkit-overflow-scrolling: touch; /* iOS üzerinde daha pürüzsüz kaydırma */
     /* Scrollbar'ı gizle */
