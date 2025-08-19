@@ -1515,9 +1515,6 @@ if (window.location.protocol !== 'file:') {
 }
 
 window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    
     // Show install button or notification
     showInstallPrompt();
 });
