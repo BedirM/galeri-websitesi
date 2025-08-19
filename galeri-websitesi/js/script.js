@@ -919,7 +919,7 @@ submitForm() {
 
             // 1 saniye bekle ve yönlendir
             setTimeout(() => {
-                window.location.href = '/thank-you.html';
+                window.location.href = './thank-you.html';
             }, 1000);
             
         } else {
