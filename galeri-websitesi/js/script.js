@@ -912,15 +912,16 @@ submitForm() {
     .then(response => response.json())
     .then(data => {
         if (data.ok) {
+            // Başarı mesajı
             if (typeof showNotification === 'function') {
-                showNotification('Mesajınız başarıyla gönderildi!', 'success');
-            } else {
-                alert('Mesajınız başarıyla gönderildi!');
+                showNotification('Mesajınız başarıyla gönderildi! Yönlendiriliyorsunuz...', 'success');
             }
-            this.form.reset();
-            Object.keys(this.fields).forEach(fieldName => {
-                this.clearFieldError(fieldName);
-            });
+
+            // 1 saniye bekle ve yönlendir
+            setTimeout(() => {
+                window.location.href = '/thank-you.html';
+            }, 1000);
+            
         } else {
             throw new Error('Form submission failed');
         }
