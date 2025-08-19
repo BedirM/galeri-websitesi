@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
+  <!-- Ana Sayfa -->
+  <url>
+    <loc>https://mujdeauto.com/</loc>
+    <lastmod>2025-08-19</lastmod>
+    <priority>1.0</priority>
+  </url>
+
+  <!-- Hakkımızda -->
+  <url>
+    <loc>https://mujdeauto.com/about.html</loc>
+    <lastmod>2025-08-19</lastmod>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- İletişim -->
+  <url>
+    <loc>https://mujdeauto.com/contact.html</loc>
+    <lastmod>2025-08-19</lastmod>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Teşekkürler Sayfası -->
+  <url>
+    <loc>https://mujdeauto.com/thank-you.html</loc>
+    <lastmod>2025-08-19</lastmod>
+    <priority>0.5</priority>
+  </url>
+
+</urlset>
