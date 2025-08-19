@@ -1464,7 +1464,6 @@ class AnalyticsManager {
             screenResolution: `${screen.width}x${screen.height}`,
             language: navigator.language
         };
-        
         this.sendEvent(pageData);
     }
 
@@ -1481,7 +1480,7 @@ class AnalyticsManager {
             
             if (scrollPercent > maxScroll) {
                 maxScroll = scrollPercent;
-                if (maxScroll % 25 === 0) { // Track every 25%
+                if (maxScroll % 25 === 0) {
                     this.sendEvent({
                         event: 'scroll_depth',
                         depth: maxScroll,
@@ -1494,7 +1493,7 @@ class AnalyticsManager {
         // Track time on page
         setInterval(() => {
             const timeOnPage = Math.round((Date.now() - this.sessionStart) / 1000);
-            if (timeOnPage % 30 === 0) { // Track every 30 seconds
+            if (timeOnPage % 30 === 0) {
                 this.sendEvent({
                     event: 'time_on_page',
                     seconds: timeOnPage,
@@ -1507,7 +1506,6 @@ class AnalyticsManager {
     trackFormInteractions() {
         const forms = document.querySelectorAll('form');
         forms.forEach(form => {
-            // Track form start
             const inputs = form.querySelectorAll('input, textarea, select');
             inputs.forEach(input => {
                 input.addEventListener('focus', () => {
@@ -1519,8 +1517,7 @@ class AnalyticsManager {
                 });
             });
 
-            // Track form submission
-            form.addEventListener('submit', (e) => {
+            form.addEventListener('submit', () => {
                 this.sendEvent({
                     event: 'form_submit',
                     form: form.id || 'contact_form',
@@ -1543,7 +1540,6 @@ class AnalyticsManager {
             });
         });
 
-        // Track search
         const searchInput = document.querySelector('#vehicleSearch');
         if (searchInput) {
             searchInput.addEventListener('input', debounce((e) => {
@@ -1559,9 +1555,7 @@ class AnalyticsManager {
     }
 
     trackPerformanceMetrics() {
-        // Track Core Web Vitals
         if ('PerformanceObserver' in window) {
-            // Largest Contentful Paint
             const lcpObserver = new PerformanceObserver((list) => {
                 const entries = list.getEntries();
                 const lastEntry = entries[entries.length - 1];
@@ -1574,7 +1568,6 @@ class AnalyticsManager {
             });
             lcpObserver.observe({ entryTypes: ['largest-contentful-paint'] });
 
-            // First Input Delay
             const fidObserver = new PerformanceObserver((list) => {
                 const entries = list.getEntries();
                 entries.forEach(entry => {
@@ -1588,14 +1581,12 @@ class AnalyticsManager {
             });
             fidObserver.observe({ entryTypes: ['first-input'] });
 
-            // Cumulative Layout Shift
             let clsValue = 0;
             const clsObserver = new PerformanceObserver((list) => {
                 const entries = list.getEntries();
                 entries.forEach(entry => {
                     if (!entry.hadRecentInput) {
                         clsValue += entry.value;
-                        // Only log CLS if it's significant
                         if (clsValue > 0.1) {
                             this.sendEvent({
                                 event: 'performance_metric',
@@ -1612,66 +1603,28 @@ class AnalyticsManager {
     }
 
     sendEvent(data) {
-        // Add session data
         data.sessionId = this.getSessionId();
         data.timestamp = Date.now();
-        
-        // Store locally for offline sync
         this.events.push(data);
-        
-        // Only send analytics if we're on a real server (not file:// protocol or localhost)
-        if (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-            // Store locally for development
-            this.storeLocally(data);
-            return;
-        }
-        
-        // Send to analytics service (replace with your analytics endpoint)
-        if (navigator.onLine) {
-            this.sendToAnalytics(data);
-        }
-        
-        // Keep only last 100 events in memory
+
+        // sadece localStorage kullan, backend yok
+        this.storeLocally(data);
+
         if (this.events.length > 100) {
             this.events = this.events.slice(-100);
         }
     }
 
-    sendToAnalytics(data) {
-        // Only send analytics if we're on a real server (not file:// protocol)
-        if (window.location.protocol === 'file:') {
-            // Store locally for development
-            this.storeLocally(data);
-            return;
-        }
-        
-        // Replace with your actual analytics endpoint
-        fetch('/api/analytics', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data)
-        }).catch(error => {
-            console.log('Analytics endpoint not available, storing locally');
-            this.storeLocally(data);
-        });
-    }
-
     storeLocally(data) {
-        // Store analytics data in localStorage for development
         try {
             const existingData = JSON.parse(localStorage.getItem('analytics_data') || '[]');
             existingData.push({
                 ...data,
                 timestamp: new Date().toISOString()
             });
-            
-            // Keep only last 100 events
             if (existingData.length > 100) {
                 existingData.splice(0, existingData.length - 100);
             }
-            
             localStorage.setItem('analytics_data', JSON.stringify(existingData));
         } catch (error) {
             console.log('Could not store analytics data locally');
@@ -1686,21 +1639,10 @@ class AnalyticsManager {
         }
         return sessionId;
     }
-
-    // Sync offline events when back online
-    syncOfflineEvents() {
-        if (this.events.length > 0) {
-            this.events.forEach(event => {
-                this.sendToAnalytics(event);
-            });
-            this.events = [];
-        }
-    }
 }
 
 // Service Worker Registration
 async function registerServiceWorker() {
-    // Only register Service Worker if not running on file:// protocol
     if (window.location.protocol === 'file:') {
         console.log('Service Worker: Skipping registration in local development (file:// protocol)');
         return;
@@ -1711,18 +1653,15 @@ async function registerServiceWorker() {
             const registration = await navigator.serviceWorker.register('/sw.js');
             console.log('Service Worker registered successfully:', registration);
             
-            // Check for updates
             registration.addEventListener('updatefound', () => {
                 const newWorker = registration.installing;
                 newWorker.addEventListener('statechange', () => {
                     if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                        // New version available
                         showUpdateNotification();
                     }
                 });
             });
             
-            // Handle service worker updates
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 console.log('New service worker activated');
                 window.location.reload();
@@ -1736,21 +1675,21 @@ async function registerServiceWorker() {
 
 // Show update notification
 function showUpdateNotification() {
-    if (userFeedback) {
+    if (typeof userFeedback !== 'undefined') {
         userFeedback.showNotification(
             'Yeni bir güncelleme mevcut. Sayfayı yenileyin.',
             'info',
             10000
         );
+    } else {
+        alert("Yeni bir güncelleme mevcut. Sayfayı yenileyin.");
     }
 }
 
 // PWA Install Prompt
 let deferredPrompt;
 
-// Only load PWA manifest if not running on file:// protocol
 if (window.location.protocol !== 'file:') {
-    // Add manifest link dynamically
     const manifestLink = document.createElement('link');
     manifestLink.rel = 'manifest';
     manifestLink.href = 'manifest.json';
@@ -1760,30 +1699,32 @@ if (window.location.protocol !== 'file:') {
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
-    
-    // Show install button or notification
     showInstallPrompt();
 });
 
 function showInstallPrompt() {
-    if (userFeedback) {
+    if (typeof userFeedback !== 'undefined') {
         userFeedback.showNotification(
-            'MÜJDE AUTO\'yu ana ekranınıza ekleyin!',
+            "MÜJDE AUTO'yu ana ekranınıza ekleyin!",
             'info',
             8000
         );
+    } else {
+        console.log("PWA yükleme bildirimi gösterilebilir.");
     }
 }
 
-// Handle app install
 window.addEventListener('appinstalled', () => {
     console.log('PWA installed successfully');
     deferredPrompt = null;
     
-    if (userFeedback) {
+    if (typeof userFeedback !== 'undefined') {
         userFeedback.showNotification(
             'MÜJDE AUTO başarıyla yüklendi!',
             'success'
         );
+    } else {
+        alert("MÜJDE AUTO başarıyla yüklendi!");
     }
 });
+
